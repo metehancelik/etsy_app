@@ -4,6 +4,7 @@ const path = require("path");
 const axios = require("axios");
 
 const moment = require("moment");
+const { downloadReport } = require("./utils");
 const MyImap = require("./imap");
 const logger = require("pino")({
   transport: {
@@ -16,7 +17,7 @@ const logger = require("pino")({
   },
 });
 
-async function run() {
+async function fetchMail() {
   const config = {
     imap: {
       user: process.env.EMAIL_USER,
@@ -48,22 +49,12 @@ async function run() {
 
   const emails = await imap.fetchEmails(criteria);
 
-  const regex = /https?:\/\/[^\s]+/g; // TODO: link 'storage' ile baslasin
-  const link = emails.pop().body.match(regex);
-  try {
-    const response = await axios.get(link[0], { responseType: "stream" });
-    const filePath = path.join(
-      __dirname,
-      "../downloaded_files",
-      "order_report.csv"
-    );
-    const writer = fs.createWriteStream(filePath);
-    response.data.pipe(writer);
-    console.log(`File downloaded successfully: ${filePath}`);
-  } catch (error) {
-    console.error(`Error fetching link: ${link[0]}, Error: ${error.message}`);
-  }
+  const regex = /https?:\/\/storage[^\s]+/g;
+  const [link] = emails.pop().body.match(regex);
+
+  if (link) await downloadReport(link, "order");
+
   await imap.end();
 }
 
-module.exports = run;
+module.exports = fetchMail;
