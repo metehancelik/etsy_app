@@ -1,11 +1,10 @@
 require("dotenv").config();
-const argv = require("minimist")(process.argv.slice(2));
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 
 const moment = require("moment");
-const MyImap = require("./my-imap");
+const MyImap = require("./imap");
 const logger = require("pino")({
   transport: {
     target: "pino-pretty",
@@ -43,11 +42,15 @@ async function run() {
 
   const emails = await imap.fetchEmails(criteria);
 
-  const regex = /https?:\/\/[^\s]+/g;
-  const link = emails[0].body.match(regex);
+  const regex = /https?:\/\/[^\s]+/g; // TODO: link 'storage' ile baslasin
+  const link = emails.pop().body.match(regex);
   try {
     const response = await axios.get(link[0], { responseType: "stream" });
-    const filePath = path.join(__dirname, "downloaded_files", "file.csv");
+    const filePath = path.join(
+      __dirname,
+      "../downloaded_files",
+      "order_report.csv"
+    );
     const writer = fs.createWriteStream(filePath);
     response.data.pipe(writer);
     console.log(`File downloaded successfully: ${filePath}`);
@@ -58,12 +61,3 @@ async function run() {
 }
 
 module.exports = run;
-
-// run()
-//   .then(() => {
-//     process.exit();
-//   })
-//   .catch((error) => {
-//     logger.error(error);
-//     process.exit(1);
-//   });
