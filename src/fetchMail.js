@@ -32,12 +32,18 @@ async function run() {
   await imap.connect();
   await imap.openBox();
 
+  const date = new Date();
+
   const criteria = [];
   criteria.push(["SINCE", moment().format("MMMM DD, YYYY")]);
   criteria.push(["FROM", "noreply@mail.etsy.com"]);
   criteria.push([
     "SUBJECT",
-    "Your CSV for March 2024 is ready to be downloaded",
+    `Your CSV for ${date
+      .toLocaleString("en-us", { month: "long" })
+      .toLocaleString("en-us", {
+        month: "long",
+      })} ${date.getFullYear()} is ready to be downloaded`,
   ]);
 
   const emails = await imap.fetchEmails(criteria);
